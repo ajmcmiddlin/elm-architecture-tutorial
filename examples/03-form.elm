@@ -78,14 +78,17 @@ viewValidation model =
         ok =
             div [ style "color" "green" ] [ text "OK" ]
 
-        bad t =
-            div [ style "color" "red" ] [ text t ]
-    in
-    if model.password /= model.passwordAgain then
-        bad "Passwords do not match!"
+        bads =
+            List.filter Tuple.first
+                [ ( model.password /= model.passwordAgain, "Passwords do not match!" )
+                , ( String.length model.password < 8, "Password less than 8 characters" )
+                ]
 
-    else if String.length model.password < 8 then
-        bad "Password less than 8 characters"
+        viewBads bs =
+            ul [ style "color" "red" ] (List.map (\b -> li [] [ text (Tuple.second b) ]) bs)
+    in
+    if List.isEmpty bads then
+        ok
 
     else
-        ok
+        viewBads bads
