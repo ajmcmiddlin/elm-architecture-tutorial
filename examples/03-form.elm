@@ -3,7 +3,7 @@ module Main exposing (Model, Msg(..), init, main, update, view, viewInput, viewV
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onClick, onInput)
 
 
 
@@ -18,17 +18,23 @@ main =
 -- MODEL
 
 
+type SubmitState
+    = NotSubmitted
+    | Submitted
+
+
 type alias Model =
     { name : String
     , password : String
     , passwordAgain : String
     , age : String
+    , submitted : SubmitState
     }
 
 
 init : Model
 init =
-    Model "" "" "" ""
+    Model "" "" "" "" NotSubmitted
 
 
 
@@ -40,6 +46,7 @@ type Msg
     | Password String
     | PasswordAgain String
     | Age String
+    | Submit
 
 
 update : Msg -> Model -> Model
@@ -57,6 +64,9 @@ update msg model =
         Age age ->
             { model | age = age }
 
+        Submit ->
+            { model | submitted = Submitted }
+
 
 
 -- VIEW
@@ -69,8 +79,18 @@ view model =
         , viewInput "password" "Password" model.password Password
         , viewInput "password" "Re-enter Password" model.passwordAgain PasswordAgain
         , viewInput "text" "Age" model.age Age
+        , viewSubmit
         , viewValidation model
         ]
+
+
+viewSubmit : Html Msg
+viewSubmit =
+    let
+        submitBtn =
+            button [ type_ "button", onClick Submit ] [ text "Submit" ]
+    in
+    div [] [ submitBtn ]
 
 
 viewInput : String -> String -> String -> (String -> msg) -> Html msg
@@ -103,12 +123,20 @@ viewValidation model =
 
         viewBads bs =
             ul [ style "color" "red" ] (List.map (\b -> li [] [ text (Tuple.second b) ]) bs)
-    in
-    if List.isEmpty bads then
-        ok
 
-    else
-        viewBads bads
+        validate =
+            if List.isEmpty bads then
+                ok
+
+            else
+                viewBads bads
+    in
+    case model.submitted of
+        NotSubmitted ->
+            div [] []
+
+        Submitted ->
+            validate
 
 
 maybe : b -> (a -> b) -> Maybe a -> b
