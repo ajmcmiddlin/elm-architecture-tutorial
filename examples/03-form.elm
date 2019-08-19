@@ -22,12 +22,13 @@ type alias Model =
     { name : String
     , password : String
     , passwordAgain : String
+    , age : String
     }
 
 
 init : Model
 init =
-    Model "" "" ""
+    Model "" "" "" ""
 
 
 
@@ -38,6 +39,7 @@ type Msg
     = Name String
     | Password String
     | PasswordAgain String
+    | Age String
 
 
 update : Msg -> Model -> Model
@@ -52,6 +54,9 @@ update msg model =
         PasswordAgain password ->
             { model | passwordAgain = password }
 
+        Age age ->
+            { model | age = age }
+
 
 
 -- VIEW
@@ -63,6 +68,7 @@ view model =
         [ viewInput "text" "Name" model.name Name
         , viewInput "password" "Password" model.password Password
         , viewInput "password" "Re-enter Password" model.passwordAgain PasswordAgain
+        , viewInput "text" "Age" model.age Age
         , viewValidation model
         ]
 
@@ -78,10 +84,21 @@ viewValidation model =
         ok =
             div [ style "color" "green" ] [ text "OK" ]
 
+        diversityTests =
+            [ Char.isLower, Char.isUpper, Char.isDigit ]
+
+        hasCharDiversity =
+            List.all (\p -> String.any p model.password) diversityTests
+
+        ageVal =
+            maybe ( True, "Age is not a valid number" ) (\a -> ( a < 0, "Age is not a natural number." ))
+
         bads =
             List.filter Tuple.first
                 [ ( model.password /= model.passwordAgain, "Passwords do not match!" )
-                , ( String.length model.password < 8, "Password less than 8 characters" )
+                , ( String.length model.password < 8, "Password has fewer than 8 characters" )
+                , ( not hasCharDiversity, "Password does not contain lower, upper, and digit characters" )
+                , ageVal <| String.toInt model.age
                 ]
 
         viewBads bs =
@@ -92,3 +109,13 @@ viewValidation model =
 
     else
         viewBads bads
+
+
+maybe : b -> (a -> b) -> Maybe a -> b
+maybe b f ma =
+    case ma of
+        Just a ->
+            f a
+
+        Nothing ->
+            b
